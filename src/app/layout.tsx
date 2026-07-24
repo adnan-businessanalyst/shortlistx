@@ -45,6 +45,20 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Shortlist — HR SaaS for AI recruiting",
+    description:
+      "HR SaaS with AI CV screening, ranked shortlists, and AI-assisted video interviewing. Join the pilot cohort.",
+    images: [
+      {
+        url: "/twitter-card.png",
+        width: 1200,
+        height: 630,
+        alt: "Shortlist X — AI CV screening and video interviewing for recruiters",
+      },
+    ],
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -53,12 +67,14 @@ export const metadata: Metadata = {
     title: "Shortlist — HR SaaS for AI CV screening & video interviewing",
     description:
       "HR SaaS for recruiters: stop reading hundreds of CVs. Shortlist scores applications, ranks a shortlist with evidence, and assists video interviews.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Shortlist — HR SaaS for AI recruiting",
-    description:
-      "HR SaaS with AI CV screening, ranked shortlists, and AI-assisted video interviewing. Join the pilot cohort.",
+    images: [
+      {
+        url: "/og-card.png",
+        width: 1200,
+        height: 630,
+        alt: "Shortlist X — AI CV screening and video interviewing for recruiters",
+      },
+    ],
   },
   robots: {
     index: true,
