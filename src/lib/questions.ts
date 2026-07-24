@@ -33,6 +33,8 @@ export async function seedQuestions(force = false): Promise<number> {
     const count = await Question.countDocuments();
     if (count > 0) return 0;
   }
-  const inserted = await Question.insertMany(SEED_QUESTIONS);
+  const inserted = await Question.insertMany(SEED_QUESTIONS, {
+    ordered: true,
+  });
   return inserted.length;
 }

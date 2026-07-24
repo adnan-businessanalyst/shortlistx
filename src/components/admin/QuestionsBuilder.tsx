@@ -331,9 +331,9 @@ export function QuestionsBuilder({ initialQuestions }: QuestionsBuilderProps) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ force }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      showToast(data.error || "Seed failed", true);
+      showToast(data.error || `Seed failed (${res.status})`, true);
       return;
     }
     showToast(data.message);

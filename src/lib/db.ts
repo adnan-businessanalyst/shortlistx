@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
@@ -20,16 +18,24 @@ const cached: MongooseCache = global.mongooseCache ?? {
 global.mongooseCache = cached;
 
 export async function connectDB(): Promise<typeof mongoose> {
-  if (!MONGODB_URI) {
+  const uri = process.env.MONGODB_URI?.trim();
+  if (!uri) {
     throw new Error("MONGODB_URI is not set in environment variables");
   }
 
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      bufferCommands: false,
-    });
+    cached.promise = mongoose
+      .connect(uri, {
+        bufferCommands: false,
+        serverSelectionTimeoutMS: 10_000,
+      })
+      .catch((err) => {
+        // Allow retry on next request after a failed cold connect
+        cached.promise = null;
+        throw err;
+      });
   }
 
   cached.conn = await cached.promise;
