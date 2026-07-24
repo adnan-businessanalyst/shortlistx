@@ -35,8 +35,9 @@ const OPERATORS = [
 ] as const;
 
 function blankQuestion(order: number): QuestionDoc {
+  const stamp = Date.now().toString(36);
   return {
-    key: `question_${order}`,
+    key: `question_${order}_${stamp}`,
     order,
     type: "text",
     label: "New question",
@@ -127,6 +128,10 @@ export function QuestionsBuilder({ initialQuestions }: QuestionsBuilderProps) {
       showToast("Label is required", true);
       return;
     }
+    if (!/^[a-z][a-z0-9_]*$/.test(draft.key)) {
+      showToast("Key must be snake_case (e.g. role_other)", true);
+      return;
+    }
     if (needsOptions(draft.type)) {
       const opts = draft.options ?? [];
       if (opts.length === 0) {
@@ -142,18 +147,58 @@ export function QuestionsBuilder({ initialQuestions }: QuestionsBuilderProps) {
 
     setSaving(true);
     try {
+      const cleanedShowIf =
+        draft.showIf?.conditions
+          ?.map((c) => ({
+            questionKey: c.questionKey.trim(),
+            operator: c.operator,
+            value:
+              c.operator === "answered" || c.operator === "not_answered"
+                ? undefined
+                : c.value,
+          }))
+          .filter((c) => c.questionKey.length > 0) ?? [];
+
+      const cleanedLabelWhen =
+        draft.labelWhen
+          ?.map((r) => ({
+            when: {
+              questionKey: r.when.questionKey.trim(),
+              operator: r.when.operator,
+              value:
+                r.when.operator === "answered" ||
+                r.when.operator === "not_answered"
+                  ? undefined
+                  : r.when.value,
+            },
+            label: r.label.trim(),
+          }))
+          .filter((r) => r.when.questionKey && r.label) ?? [];
+
       const payload = {
-        key: draft.key,
+        key: draft.key.trim(),
         order: draft.order,
         type: draft.type,
-        label: draft.label,
-        hint: draft.hint || null,
-        placeholder: draft.placeholder || null,
-        required: draft.required,
-        options: needsOptions(draft.type) ? draft.options : undefined,
-        active: draft.active,
-        showIf: draft.showIf || null,
-        labelWhen: draft.labelWhen || null,
+        label: draft.label.trim(),
+        hint: draft.hint?.trim() || null,
+        placeholder: draft.placeholder?.trim() || null,
+        required: Boolean(draft.required),
+        options: needsOptions(draft.type)
+          ? (draft.options ?? []).map((o) => ({
+              id: o.id || o.value,
+              value: o.value.trim(),
+              label: o.label.trim(),
+            }))
+          : undefined,
+        active: Boolean(draft.active),
+        showIf:
+          cleanedShowIf.length > 0
+            ? {
+                logic: draft.showIf?.logic ?? "and",
+                conditions: cleanedShowIf,
+              }
+            : null,
+        labelWhen: cleanedLabelWhen.length > 0 ? cleanedLabelWhen : null,
       };
 
       let res: Response;
@@ -173,7 +218,19 @@ export function QuestionsBuilder({ initialQuestions }: QuestionsBuilderProps) {
 
       const data = await res.json();
       if (!res.ok) {
-        showToast(data.error || "Save failed", true);
+        const detail =
+          typeof data.details === "string"
+            ? data.details
+            : data.details?.formErrors?.[0] ||
+              (data.details?.fieldErrors
+                ? Object.entries(data.details.fieldErrors as Record<string, string[]>)
+                    .map(([k, v]) => `${k}: ${(v as string[]).join(", ")}`)
+                    .join("; ")
+                : null);
+        showToast(
+          [data.error || "Save failed", detail].filter(Boolean).join(" — "),
+          true
+        );
         return;
       }
       showToast("Saved");

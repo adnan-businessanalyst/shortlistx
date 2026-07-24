@@ -31,10 +31,10 @@ export function serializeQuestion(doc: {
       label: o.label,
     })),
     active: doc.active,
-    showIf: doc.showIf
+    showIf: doc.showIf?.conditions?.length
       ? {
-          logic: doc.showIf.logic,
-          conditions: doc.showIf.conditions.map((c) => ({
+          logic: doc.showIf.logic ?? "and",
+          conditions: (doc.showIf.conditions ?? []).map((c) => ({
             questionKey: c.questionKey,
             operator: c.operator,
             value: c.value as string | string[] | undefined,

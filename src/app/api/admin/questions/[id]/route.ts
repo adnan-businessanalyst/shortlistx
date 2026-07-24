@@ -26,8 +26,29 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const { id } = await ctx.params;
 
   try {
-    const body = await req.json();
-    const parsed = questionInputSchema.partial().safeParse(body);
+    const raw = await req.json();
+    // Drop empty branching rows before validation
+    if (raw?.showIf?.conditions) {
+      raw.showIf.conditions = raw.showIf.conditions.filter(
+        (c: { questionKey?: string }) => c?.questionKey?.trim()
+      );
+      if (!raw.showIf.conditions.length) raw.showIf = null;
+    }
+    if (Array.isArray(raw?.labelWhen)) {
+      raw.labelWhen = raw.labelWhen.filter(
+        (r: { when?: { questionKey?: string }; label?: string }) =>
+          r?.when?.questionKey?.trim() && r?.label?.trim()
+      );
+      if (!raw.labelWhen.length) raw.labelWhen = null;
+    }
+    if (
+      raw?.type &&
+      !["select", "single_choice", "multi_choice"].includes(raw.type)
+    ) {
+      delete raw.options;
+    }
+
+    const parsed = questionInputSchema.partial().safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid question", details: parsed.error.flatten() },
