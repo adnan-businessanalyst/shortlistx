@@ -8,8 +8,8 @@ import { Question } from "@/models/Question";
 
 export const dynamic = "force-dynamic";
 
-function cleanQuestionInput<T extends Record<string, unknown>>(data: T) {
-  const next = { ...data };
+function cleanQuestionInput(data: Record<string, unknown>) {
+  const next: Record<string, unknown> = { ...data };
 
   if (next.showIf && typeof next.showIf === "object") {
     const showIf = next.showIf as {
@@ -25,11 +25,10 @@ function cleanQuestionInput<T extends Record<string, unknown>>(data: T) {
   }
 
   if (Array.isArray(next.labelWhen)) {
-    next.labelWhen = next.labelWhen.filter(
-      (r: { when?: { questionKey?: string }; label?: string }) =>
-        r?.when?.questionKey && r?.label
-    );
-    if ((next.labelWhen as unknown[]).length === 0) next.labelWhen = null;
+    const labelWhen = (
+      next.labelWhen as Array<{ when?: { questionKey?: string }; label?: string }>
+    ).filter((r) => r?.when?.questionKey && r?.label);
+    next.labelWhen = labelWhen.length ? labelWhen : null;
   }
 
   const type = String(next.type ?? "");
